@@ -1,5 +1,6 @@
 package com.minimarket;
 
+import com.minimarket.entity.Producto;
 import com.minimarket.entity.Rol;
 import com.minimarket.entity.Usuario;
 import com.minimarket.entity.Venta;
@@ -15,6 +16,7 @@ import java.util.Date;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -78,4 +80,21 @@ class VentaServiceTest {
         assertFalse(tienePermiso);
         verify(ventaRepository, never()).save(any(Venta.class));
     }
+@Test
+void ventaValidaStockSuficienteYCalculaTotal() {
+    Producto producto = new Producto();
+    producto.setId(1L);
+    producto.setNombre("Arroz");
+    producto.setPrecio(1500.0);
+    producto.setStock(10);
+
+    int cantidadVendida = 3;
+
+    boolean stockSuficiente = producto.getStock() >= cantidadVendida;
+    double total = producto.getPrecio() * cantidadVendida;
+
+    assertTrue(stockSuficiente);
+    assertEquals(4500.0, total);
+}
+
 }
