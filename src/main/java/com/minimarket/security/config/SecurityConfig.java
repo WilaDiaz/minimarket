@@ -39,38 +39,26 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
 
-
-
                 // Endpoints públicos
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
 
-
-
                 // Solo GERENTE
                 .requestMatchers("/api/usuarios/**").hasRole("GERENTE")
                 .requestMatchers("/api/inventario/**").hasRole("GERENTE")
-
-
 
                 // GERENTE y EMPLEADO
                 .requestMatchers("/api/ventas/**").hasAnyRole("GERENTE", "EMPLEADO")
                 .requestMatchers("/api/detalle-ventas/**").hasAnyRole("GERENTE", "EMPLEADO")
 
-
-
                 // CLIENTE, EMPLEADO y GERENTE
                 .requestMatchers("/api/productos/**").hasAnyRole("GERENTE", "EMPLEADO", "CLIENTE")
                 .requestMatchers("/api/categorias/**").hasAnyRole("GERENTE", "EMPLEADO", "CLIENTE")
 
-
-
                 // CLIENTE y GERENTE
                 .requestMatchers("/api/carrito/**").hasAnyRole("CLIENTE", "GERENTE")
-
-
 
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
