@@ -34,7 +34,7 @@ class UsuarioServiceTest {
     @Test
     void autenticarUsuarioValido() {
         Rol rol = new Rol();
-        rol.setNombre("ROLE_ADMIN");
+        rol.setNombre("ADMIN");
 
         Usuario usuario = new Usuario();
         usuario.setId(1L);
