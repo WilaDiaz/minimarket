@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
@@ -23,8 +25,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 @RequestMapping("/api/productos")
 @Tag(
-    name = "Productos",
-    description = "Endpoints para la gestión de productos del Minimarket Plus"
+        name = "Productos",
+        description = "Endpoints para la gestión de productos del Minimarket Plus"
 )
 public class ProductoController {
 
@@ -32,60 +34,56 @@ public class ProductoController {
     private ProductoService productoService;
 
     @Operation(
-        summary = "Listar productos",
-        description = "Obtiene la lista completa de productos registrados en el sistema"
+            summary = "Listar productos",
+            description = "Obtiene la lista completa de productos registrados en el sistema"
     )
     @ApiResponse(
-        responseCode = "200",
-        description = "Lista de productos obtenida correctamente"
+            responseCode = "200",
+            description = "Lista de productos obtenida correctamente"
     )
     @GetMapping
     public CollectionModel<EntityModel<Producto>> listarProductos() {
 
         List<EntityModel<Producto>> productos = productoService.findAll()
-            .stream()
-            .map(producto -> EntityModel.of(
-                producto,
-                linkTo(
-                    methodOn(ProductoController.class)
-                        .obtenerProductoPorId(producto.getId())
-                ).withSelfRel(),
-
-                linkTo(
-                    methodOn(ProductoController.class)
-                        .listarProductos()
-                ).withRel("productos")
-            ))
-            .toList();
+                .stream()
+                .map(producto -> EntityModel.of(
+                        producto,
+                        linkTo(methodOn(ProductoController.class)
+                                .obtenerProductoPorId(producto.getId()))
+                                .withSelfRel(),
+                        linkTo(methodOn(ProductoController.class)
+                                .listarProductos())
+                                .withRel("productos")
+                ))
+                .toList();
 
         return CollectionModel.of(
-            productos,
-            linkTo(
-                methodOn(ProductoController.class)
-                    .listarProductos()
-            ).withSelfRel()
+                productos,
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withSelfRel()
         );
     }
 
     @Operation(
-        summary = "Obtener producto por ID",
-        description = "Busca un producto específico utilizando su identificador"
+            summary = "Obtener producto por ID",
+            description = "Busca un producto específico utilizando su identificador"
     )
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Producto encontrado correctamente"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Producto no encontrado"
-        )
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Producto encontrado correctamente"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Producto no encontrado"
+            )
     })
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<Producto>> obtenerProductoPorId(
             @Parameter(
-                description = "ID del producto que se desea consultar",
-                example = "1"
+                    description = "ID del producto que se desea consultar",
+                    example = "1"
             )
             @PathVariable Long id) {
 
@@ -96,63 +94,87 @@ public class ProductoController {
         }
 
         EntityModel<Producto> productoModel = EntityModel.of(
-            producto,
-
-            linkTo(
-                methodOn(ProductoController.class)
-                    .obtenerProductoPorId(id)
-            ).withSelfRel(),
-
-            linkTo(
-                methodOn(ProductoController.class)
-                    .listarProductos()
-            ).withRel("productos")
+                producto,
+                linkTo(methodOn(ProductoController.class)
+                        .obtenerProductoPorId(id))
+                        .withSelfRel(),
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withRel("productos")
         );
 
         return ResponseEntity.ok(productoModel);
     }
 
     @Operation(
-        summary = "Crear producto",
-        description = "Registra un nuevo producto en el sistema"
+            summary = "Crear producto",
+            description = "Registra un nuevo producto y devuelve enlaces HATEOAS para navegar por la API"
     )
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Producto creado correctamente"
-        ),
-        @ApiResponse(
-            responseCode = "400",
-            description = "Datos del producto inválidos"
-        )
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Producto creado correctamente con enlaces HATEOAS"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Datos del producto inválidos"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Usuario no autenticado"
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Usuario sin permisos para crear productos"
+            )
     })
     @PostMapping
-    public Producto guardarProducto(@RequestBody Producto producto) {
-        return productoService.save(producto);
+    public ResponseEntity<EntityModel<Producto>> guardarProducto(
+            @Valid @RequestBody Producto producto) {
+
+        Producto productoGuardado = productoService.save(producto);
+
+        EntityModel<Producto> productoModel = EntityModel.of(
+                productoGuardado,
+                linkTo(methodOn(ProductoController.class)
+                        .obtenerProductoPorId(productoGuardado.getId()))
+                        .withSelfRel(),
+                linkTo(methodOn(ProductoController.class)
+                        .listarProductos())
+                        .withRel("productos")
+        );
+
+        return ResponseEntity
+                .status(201)
+                .body(productoModel);
     }
 
     @Operation(
-        summary = "Actualizar producto",
-        description = "Actualiza los datos de un producto existente utilizando su ID"
+            summary = "Actualizar producto",
+            description = "Actualiza los datos de un producto existente utilizando su ID"
     )
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "Producto actualizado correctamente"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Producto no encontrado"
-        )
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Producto actualizado correctamente"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Datos del producto inválidos"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Producto no encontrado"
+            )
     })
     @PutMapping("/{id}")
     public ResponseEntity<Producto> actualizarProducto(
             @Parameter(
-                description = "ID del producto que se desea actualizar",
-                example = "1"
+                    description = "ID del producto que se desea actualizar",
+                    example = "1"
             )
             @PathVariable Long id,
-            @RequestBody Producto producto) {
+            @Valid @RequestBody Producto producto) {
 
         Producto productoExistente = productoService.findById(id);
 
@@ -165,24 +187,24 @@ public class ProductoController {
     }
 
     @Operation(
-        summary = "Eliminar producto",
-        description = "Elimina un producto existente utilizando su ID"
+            summary = "Eliminar producto",
+            description = "Elimina un producto existente utilizando su ID"
     )
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "204",
-            description = "Producto eliminado correctamente"
-        ),
-        @ApiResponse(
-            responseCode = "404",
-            description = "Producto no encontrado"
-        )
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Producto eliminado correctamente"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Producto no encontrado"
+            )
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProducto(
             @Parameter(
-                description = "ID del producto que se desea eliminar",
-                example = "1"
+                    description = "ID del producto que se desea eliminar",
+                    example = "1"
             )
             @PathVariable Long id) {
 
